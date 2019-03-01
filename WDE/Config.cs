@@ -1,234 +1,244 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Xml;
 
 namespace jd.Helper.XXApplication.Configuration
 {
-   /// <summary>
-   /// Verwaltet eine Einstellung
-   /// </summary>
-   public class Setting
-   {
-      /// <summary>
-      /// Der Name der Einstellung
-      /// </summary>
-      public string Name;
+    /// <summary>
+    /// Manages a setting
+    /// </summary>
+    public class Setting
+    {
+        /// <summary>
+        /// The name of the setting
+        /// </summary>
+        public string Name;
 
-      /// <summary>
-      /// Der Wert der Einstellung
-      /// </summary>
-      public string Value;
+        /// <summary>
+        /// The value of the setting
+        /// </summary>
+        public string Value;
 
-      /// <summary>
-      /// Der Defaultwert für das Lesen
-      /// </summary>
-      public string DefaultValue;
+        /// <summary>
+        /// The default value for setting
+        /// </summary>
+        public string DefaultValue;
 
-      /// <summary>
-      /// Gibt an, ob die Einstellung
-      /// in der Datei gefunden wurde
-      /// </summary>
-      public bool WasInFile;
+        /// <summary>
+        /// Indicates whether the setting
+        /// was found in the file
+        /// </summary>
+        public bool WasInFile;
 
-      /// <summary>
-      /// Konstruktor
-      /// </summary>
-      /// <param name="name">Der Name der Einstellung</param>
-      /// <param name="defaultValue">Der Defaultwert für das Lesen</param>
-      public Setting(string name, string defaultValue)
-      {
-         this.Name = name;
-         this.DefaultValue = defaultValue;
-      }
-   }
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="name">The name of the setting</param>
+        /// <param name="defaultValue">The default value for setting</param>
+        public Setting(string name, string defaultValue)
+        {
+            Name = name;
+            DefaultValue = defaultValue;
+        }
+    }
 
-   /// <summary>
-   /// Auflistung zum Speichern mehrerer Einstellungen
-   /// </summary>
-   public class Settings : Dictionary<string, Setting>
-   {
-      /// <summary>
-      /// Fügt der Auflistung eine neue Einstellung hinzu
-      /// </summary>
-      /// <param name="settingName">Der Name der Einstellung</param>
-      /// <param name="defaultValue">Der Defaultwert für das Lesen</param>
-      public void Add(string settingName, string defaultValue)
-      {
-         this.Add(settingName,
-            new Setting(settingName, defaultValue));
-      }
+    /// <summary>
+    /// List to save multiple settings
+    /// </summary>
+    public class Settings : Dictionary<string, Setting>
+    {
+        /// <summary>
+        /// Adds a new setting to the collection
+        /// </summary>
+        /// <param name="settingName">The name of the setting</param>
+        /// <param name="defaultValue">The default value for setting</param>
+        public void Add(string settingName, string defaultValue)
+        {
+            Add(settingName,
+                new Setting(settingName, defaultValue));
+        }
 
-   }
+    }
 
-   /// <summary>
-   /// Verwaltet eine Einstellungs-Sektion
-   /// </summary>
-   public class Section
-   {
-      /// <summary>
-      /// Der Name der Sektion
-      /// </summary>
-      public string Name;
+    /// <summary>
+    /// Manages a settings section
+    /// </summary>
+    public class Section
+    {
+        /// <summary>
+        /// The name of the section
+        /// </summary>
+        public string Name;
 
-      /// <summary>
-      /// Die Einstellungen der Sektion
-      /// </summary>
-      public Settings Settings;
+        /// <summary>
+        /// The settings of the section
+        /// </summary>
+        public Settings Settings;
 
-      /// <summary>
-      /// Konstruktor
-      /// </summary>
-      /// <param name="sectionName">Der Name der Sektion</param>
-      public Section(string sectionName)
-      {
-         this.Name = sectionName;
-         this.Settings = new Settings();
-      }
-   }
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="sectionName">The name of the section</param>
+        public Section(string sectionName)
+        {
+            Name = sectionName;
+            Settings = new Settings();
+        }
+    }
 
-   /// <summary>
-   /// Auflistung zur Speicherung von Sektionen
-   /// </summary>
-   public class Sections : Dictionary<string, Section>
-   {
-      /// <summary>
-      /// Fügt der Auflistung ein neues Section-Objekt hinzu
-      /// </summary>
-      /// <param name="name">Der Name der Sektion</param>
-      public void Add(string name)
-      {
-         this.Add(name, new Section(name));
-      }
-   }
+    /// <summary>
+    /// List for storing sections
+    /// </summary>
+    public class Sections : Dictionary<string, Section>
+    {
+        /// <summary>
+        /// Adds a new Section object to the collection
+        /// </summary>
+        /// <param name="name">The name of the section</param>
+        public void Add(string name)
+        {
+            Add(name, new Section(name));
+        }
+    }
 
-   /// <summary>
-   /// Klasse zur Verwaltung von Konfigurationsdaten
-   /// </summary>
-   public class Config
-   {
-      /// <summary>
-      /// Speichert den Dateinamen der XML-Datei
-      /// </summary>
-      private string fileName;
+    /// <summary>
+    /// Class for managing configuration data
+    /// </summary>
+    public class Config
+    {
+        /// <summary>
+        /// Saves the file name of the XML file
+        /// </summary>
+        private string fileName;
 
-      /// <summary>
-      /// Verwaltet die Sektionen
-      /// </summary>
-      public Sections Sections;
+        /// <summary>
+        /// Manages the sections
+        /// </summary>
+        public Sections Sections;
 
-      /// <summary>
-      /// Konstruktor
-      /// </summary>
-      /// <param name="fileName">Der Dateiname der XML-Datei</param>
-      public Config(string fileName)
-      {
-         this.fileName = fileName;
-         this.Sections = new Sections();
-      }
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="fileName">Name of the XML file</param>
+        public Config(string fileName)
+        {
+            this.fileName = fileName;
+            Sections = new Sections();
+        }
 
-      /// <summary>
-      /// Ließ die Konfigurationsdaten
-      /// </summary>
-      /// <returns>Gibt true zurück wenn das Lesen erfolgreich war</returns>
-      public bool Load()
-      {
-         // Variable für den Rückgabewert
-         bool returnValue = true;
+        /// <summary>
+        /// Leave the configuration data
+        /// </summary>
+        /// <returns>Returns true if the reading was successful</returns>
+        public bool Load()
+        {
+            // Variable for the return value
+            bool returnValue = true;
 
-         // XmlDocument-Objekt für die Einstellungs-Datei erzeugen
-         XmlDocument xmlDoc = new XmlDocument();
+            // Create an XmlDocument object for the settings file
+            XmlDocument xmlDoc = new XmlDocument();
 
-         // Datei laden
-         try
-         {
-            xmlDoc.Load(this.fileName);
-         }
-         catch (IOException ex)
-         {
-            throw new IOException("Fehler beim Laden der Konfigurationsdatei '" +
-               this.fileName + "': " + ex.Message);
-         }
-         catch (XmlException ex)
-         {
-            throw new XmlException("Fehler beim Laden der Konfigurationsdatei '" +
-               this.fileName + "': " + ex.Message, ex);
-         }
-
-         // Alle Sektionen durchgehen und die Einstellungen einlesen
-         foreach (Section section in this.Sections.Values)
-         {
-            // Alle Einstellungen der Sektion durchlaufen
-            foreach (Setting setting in section.Settings.Values)
+            // load a file
+            try
             {
-               // Einstellung im XML-Dokument lokalisieren
-               XmlNode settingNode = xmlDoc.SelectSingleNode(
-                  "/config/" + section.Name + "/" + setting.Name);
-               if (settingNode != null)
-               {
-                  // Einstellung gefunden
-                  setting.Value = settingNode.InnerText;
-                  setting.WasInFile = true;
-               }
-               else
-               {
-                  // Einstellung nicht gefunden
-                  setting.Value = setting.DefaultValue;
-                  setting.WasInFile = false;
-                  returnValue = false;
-               }
+                xmlDoc.Load(fileName);
             }
-         }
-
-         // Ergebnis zurückmelden
-         return returnValue;
-      }
-
-      /// <summary>
-      /// Speichert die Konfigurationsdaten
-      /// </summary>
-      public void Save()
-      {
-         // XmlDocument-Objekt für die Einstellungs-Datei erzeugen
-         XmlDocument xmlDoc = new XmlDocument();
-
-         // Skelett der XML-Datei erzeugen
-         xmlDoc.LoadXml("<?xml version=\"1.0\" encoding=\"utf-8\" " +
-            "standalone=\"yes\"?><config></config>");
-
-         // Alle Sektionen durchgehen und die Einstellungen schreiben
-         foreach (Section section in this.Sections.Values)
-         {
-            // Element für die Sektion erzeugen und anfügen
-            XmlElement sectionElement = xmlDoc.CreateElement(section.Name);
-            xmlDoc.DocumentElement.AppendChild(sectionElement);
-
-            // Alle Einstellungen der Sektion durchlaufen
-            foreach (Setting setting in section.Settings.Values)
+            catch (IOException ex)
             {
-               // Einstellungs-Element erzeugen und anfügen
-               XmlElement settingElement =
-                  xmlDoc.CreateElement(setting.Name);
-               settingElement.InnerText = setting.Value;
-               sectionElement.AppendChild(settingElement);
+                throw new IOException("Error loading configuration file '" +
+                                      fileName + "': " + ex.Message);
             }
-         }
+            catch (XmlException ex)
+            {
+                throw new XmlException("Error loading configuration file'" +
+                                       fileName + "': " + ex.Message, ex);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
 
-         // Datei speichern
-         try
-         {
-            xmlDoc.Save(this.fileName);
-         }
-         catch (IOException ex)
-         {
-            throw new IOException("Fehler beim Speichern der " +
-               "Konfigurationsdatei '" + this.fileName + "': " + ex.Message);
-         }
-         catch (XmlException ex)
-         {
-            throw new XmlException("Fehler beim Speichern der " +
-               " Konfigurationsdatei '" + this.fileName + "': " +
-               ex.Message, ex);
-         }
-      }
-   }
+            // Go through all the sections and read in the settings
+            foreach (Section section in Sections.Values)
+            {
+                // All settings of the section go through
+                foreach (Setting setting in section.Settings.Values)
+                {
+                    // Locate setting in XML document
+                    XmlNode settingNode = xmlDoc.SelectSingleNode(
+                        "/config/" + section.Name + "/" + setting.Name);
+                    if (settingNode != null)
+                    {
+                        // Setting found
+                        setting.Value = settingNode.InnerText;
+                        setting.WasInFile = true;
+                    }
+                    else
+                    {
+                        // Setting NOT found
+                        setting.Value = setting.DefaultValue;
+                        setting.WasInFile = false;
+                        returnValue = false;
+                    }
+                }
+            }
+
+            // Report result
+            return returnValue;
+        }
+
+        /// <summary>
+        /// Saves the configuration data
+        /// </summary>
+        public void Save()
+        {
+            // Create an XmlDocument object for the settings file
+            XmlDocument xmlDoc = new XmlDocument();
+
+            // Create skeleton of the XML file
+            xmlDoc.LoadXml("<?xml version=\"1.0\" encoding=\"utf-8\" " +
+                           "standalone=\"yes\"?><config></config>");
+
+            // Go through all the sections and write the settings
+            foreach (Section section in Sections.Values)
+            {
+                // Create and attach an element for the section
+                XmlElement sectionElement = xmlDoc.CreateElement(section.Name);
+                xmlDoc.DocumentElement.AppendChild(sectionElement);
+
+                // All settings of the section go through
+                foreach (Setting setting in section.Settings.Values)
+                {
+                    // Create and attach a settings item
+                    XmlElement settingElement =
+                        xmlDoc.CreateElement(setting.Name);
+                    settingElement.InnerText = setting.Value;
+                    sectionElement.AppendChild(settingElement);
+                }
+            }
+
+            // save file
+            try
+            {
+                xmlDoc.Save(fileName);
+            }
+            catch (IOException ex)
+            {
+                throw new IOException("Error saving the " +
+                                      "configuration file '" + fileName + "': " + ex.Message);
+            }
+            catch (XmlException ex)
+            {
+                throw new XmlException("Error saving the " +
+                                       "configuration file '"+ fileName + "': " +
+                                       ex.Message, ex);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
+        }
+    }
 }

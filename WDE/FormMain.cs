@@ -1,17 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
-using System.Linq;
-using System.Windows.Forms.Integration;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.WindowsAPICodePack.Shell;
 using Microsoft.WindowsAPICodePack.Controls;
-using System.Threading;
 using System.Diagnostics;
 using System.IO;
 using jd.Helper.Configuration;
@@ -33,7 +28,6 @@ namespace WDE
 
         const int TOPOFEACHOTHER = 1;
         const int NEXTTOEACHOTHER = 2;
-        //int TabSheetCounter = 0;
         static public UserControlExplorer current_uce = null;
         static public UserControlExplorer current_uce1 = null;
         static public UserControlExplorer current_uce2 = null;
@@ -43,21 +37,27 @@ namespace WDE
 
         FormSplash formSplash = new FormSplash();
 
-        //private JumpList jumpList;
-        //private TaskbarManager windowsTaskbar = TaskbarManager.Instance;
-
         ApplicationSettings applicationSettings = new ApplicationSettings(Path.Combine(Application.LocalUserAppDataPath, "wdeConfig.xml"));
 
         public FormMain(string[] args)
         {
+            Stopwatch perfStopwatch = Stopwatch.StartNew();
             InitializeComponent();
 
+            Debug.WriteLine("*** 1. duration: {0} ms.", perfStopwatch.ElapsedMilliseconds);
+            perfStopwatch.Restart();
+
             formSplash.Show();
+
             Application.DoEvents();
+            Debug.WriteLine("*** 2. duration: {0} ms.", perfStopwatch.ElapsedMilliseconds);
+            perfStopwatch.Restart();
 
             _args = args;
 
             applicationSettings.Load();
+            Debug.WriteLine("*** 3. duration: {0} ms.", perfStopwatch.ElapsedMilliseconds);
+            perfStopwatch.Restart();
 
             for (int i = 0; i < applicationSettings.sections.Count; i++)
             {
@@ -68,24 +68,40 @@ namespace WDE
 
                     string tabControlName = "";
                     if (applicationSettings.sections[i].settings.GetItemByString("ParentTabControl") != null)
+                    {
                         tabControlName = applicationSettings.sections[i].settings.GetItemByString("ParentTabControl").Value;
+                    }
 
                     if ((tabControlName == "") || (tabControlName == tabControl1.Name))
+                    {
                         tc = tabControl1;
+                    }
                     else
+                    {
                         tc = tabControl2;
+                    }
 
                     AddExplorer(tc, sectionName, false);
                 }
             }
+            Debug.WriteLine("*** 4. duration: {0} ms.", perfStopwatch.ElapsedMilliseconds);
+            perfStopwatch.Restart();
 
             sortPages(tabControl1);
             sortPages(tabControl2);
 
+            Debug.WriteLine("*** 5. duration: {0} ms.", perfStopwatch.ElapsedMilliseconds);
+            perfStopwatch.Restart();
+
             if (tabControl1.TabCount == 0)
+            {
                 AddExplorer(tabControl1, "", false);
+            }
+
             if (tabControl2.TabCount == 0)
+            {
                 AddExplorer(tabControl2, "", false);
+            }
 
             //
             if (Properties.Settings.Default.CallUpgrade)
@@ -96,10 +112,10 @@ namespace WDE
             }
 
             //caption
-            this.Text += System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            Text += System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
             Properties.Settings settings = Properties.Settings.Default;
-            this.Size = settings.formsize;
+            Size = settings.formsize;
 
             if (Properties.Settings.Default.Layout == TOPOFEACHOTHER)
             {
@@ -114,17 +130,30 @@ namespace WDE
             Top = Properties.Settings.Default.FormT;
 
             if (Left < 0)
+            {
                 Left = 0;
+            }
+
             if (Top < 0)
+            {
                 Top = 0;
+            }
 
 
-            if (this.Height < 50)
-                this.Height = 700;
-            if (this.Width < 50)
-                this.Width = 800;
+            if (Height < 50)
+            {
+                Height = 700;
+            }
+
+            if (Width < 50)
+            {
+                Width = 800;
+            }
 
             WindowState = Properties.Settings.Default.WindowState;
+
+            Debug.WriteLine("*** 6. duration: {0} ms.", perfStopwatch.ElapsedMilliseconds);
+            perfStopwatch.Restart();
 
             // initialize known folder combo box
             List<string> knownFolderList = new List<string>();
@@ -133,24 +162,30 @@ namespace WDE
                 knownFolderList.Add(folder.CanonicalName);
             }
             knownFolderList.Sort();
+            Debug.WriteLine("*** 7. duration: {0} ms.", perfStopwatch.ElapsedMilliseconds);
+            perfStopwatch.Restart();
+
             tscbKnownFolder.Items.AddRange(knownFolderList.ToArray());
 
             foreach (string s in knownFolderList)
             {
                 ToolStripMenuItem tsmi = new ToolStripMenuItem(s);
-                jumpToToolStripMenuItem.DropDownItems.Add(s, global::WDE.Properties.Resources.folder, jumpTo_Click);
+                jumpToToolStripMenuItem.DropDownItems.Add(s, Properties.Resources.folder, jumpTo_Click);
             }
 
+            Debug.WriteLine("*** 8. duration: {0} ms.", perfStopwatch.ElapsedMilliseconds);
+            perfStopwatch.Restart();
 
             if (Properties.Settings.Default.Favs != null)
             {
                 foreach (string fav in Properties.Settings.Default.Favs)
                 {
-                    CreateFavButton(System.IO.Path.GetFileName(fav), fav);
+                    CreateFavButton(Path.GetFileName(fav), fav);
                 }
             }
 
-
+            Debug.WriteLine("*** 9. duration: {0} ms.", perfStopwatch.ElapsedMilliseconds);
+            perfStopwatch.Restart();
 
             if (!Properties.Settings.Default.ViewToolbar)
             {
@@ -163,7 +198,6 @@ namespace WDE
             {
                 tsmiViewStatusbar1.Checked = false;
                 tsmiViewStatusbar1.CheckState = CheckState.Unchecked;
-                //statusStrip1.Visible = false;
             }
             if (!Properties.Settings.Default.ViewExpl1Toolbar)
             {
@@ -190,10 +224,8 @@ namespace WDE
             tpnew2.ImageIndex = 1;
             tabControl2.TabPages.Add(tpnew2);
 
-
             tabControl1_SelectedIndexChanged(null, null);
             tabControl2_SelectedIndexChanged(null, null);
-
 
             //
             RegistryKey regKey = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced");
@@ -205,9 +237,9 @@ namespace WDE
                     tsmiShowHiddenFiles.Checked = ((int)regValue != 0);
                 }
             }
-
+            Debug.WriteLine("*** 10. duration: {0} ms.", perfStopwatch.ElapsedMilliseconds);
+            perfStopwatch.Restart();
         }
-
 
         private void FormMain_Load(object sender, EventArgs e)
         {
@@ -218,7 +250,6 @@ namespace WDE
                 {
                     string newPath = _args[0];
 
-                    //  newPath = Path.GetDirectoryName(newPath);
                     if (Directory.Exists(newPath))
                     {
 
@@ -226,13 +257,16 @@ namespace WDE
                         tabControl1.SelectedIndex = tabControl1.TabCount - 2;
 
                         if (curUCE != null)
-                            curUCE.explorerBrowser.Navigate(ShellFileSystemFolder.FromParsingName(newPath));
+                        {
+                            curUCE.explorerBrowser.Navigate(ShellObject.FromParsingName(newPath));
+                        }
                     }
                 }
-                catch (Exception) { throw; }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex);
+                }
             }
-
-
         }
 
         private void FormMain_FormClosed(object sender, FormClosedEventArgs e)
@@ -248,7 +282,7 @@ namespace WDE
             Properties.Settings.Default.FormH = Height;
             Properties.Settings.Default.ViewToolbar = tsMain.Visible;
             Properties.Settings.Default.WindowState = WindowState;
-            settings.formsize = this.Size;
+            settings.formsize = Size;
             settings.Save();
 
             Properties.Settings.Default.Save();
@@ -259,7 +293,7 @@ namespace WDE
             try
             {
                 // Navigate to a known folder
-                IKnownFolder kf = KnownFolderHelper.FromCanonicalName(this.tscbKnownFolder.Items[tscbKnownFolder.SelectedIndex].ToString());
+                IKnownFolder kf = KnownFolderHelper.FromCanonicalName(tscbKnownFolder.Items[tscbKnownFolder.SelectedIndex].ToString());
 
                 current_uce.explorerBrowser.Navigate((ShellObject)kf);
             }
@@ -267,20 +301,20 @@ namespace WDE
             {
                 MessageBox.Show("Navigation not possible.");
             }
-
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
         }
 
         private void navigationHistoryCombo_SelectedIndexChanged(object sender, EventArgs e)
         {
-            // navigating to specific index in navigation log
-            //explorerBrowser1.NavigateLogLocation(this.navigationHistoryCombo.SelectedIndex);
-
         }
 
         private void tsbExplorer_Click(object sender, EventArgs e)
         {
             string Programmname = "explorer.exe";
-            System.Diagnostics.Process.Start(Programmname, current_uce.explorerBrowser.NavigationLog.CurrentLocation.ParsingName);
+            Process.Start(Programmname, current_uce.explorerBrowser.NavigationLog.CurrentLocation.ParsingName);
         }
 
 
@@ -316,7 +350,9 @@ namespace WDE
         private void toolStripButton1_Click(object sender, EventArgs e)
         {
             if (tsbLayout1.Checked)
+            {
                 return;
+            }
 
             //Übereinander
             Properties.Settings.Default.Layout = TOPOFEACHOTHER;
@@ -328,7 +364,7 @@ namespace WDE
             if ((tsbShowHide1.Checked) && (tsbShowHide2.Checked))
             {
                 panel1.Dock = DockStyle.Top;
-                panel1.Height = (this.Height - menuStripMain.Height - tsMain.Height) / 2;
+                panel1.Height = (Height - menuStripMain.Height - tsMain.Height) / 2;
                 splitter.Dock = DockStyle.Top;
                 panel2.Dock = DockStyle.Fill;
             }
@@ -350,7 +386,9 @@ namespace WDE
         private void toolStripButton2_Click(object sender, EventArgs e)
         {
             if (tsbLayout2.Checked)
+            {
                 return;
+            }
 
             //Hintereinanden
             Properties.Settings.Default.Layout = NEXTTOEACHOTHER;
@@ -363,8 +401,11 @@ namespace WDE
             {
                 panel1.Dock = DockStyle.Left;
                 panel1.Width = panel1.Width = Properties.Settings.Default.Panel1W;
-                if (panel1.Width > (this.Width - 20))
-                    panel1.Width = this.Width / 2;
+                if (panel1.Width > (Width - 20))
+                {
+                    panel1.Width = Width / 2;
+                }
+
                 splitter.Dock = DockStyle.Left;
                 panel2.Dock = DockStyle.Fill;
             }
@@ -378,7 +419,7 @@ namespace WDE
                 panel2.Dock = DockStyle.Fill;
 
             }
-         
+
             OrderLayout();
 
             layout1ToolStripMenuItem.Checked = tsbLayout1.Checked;
@@ -389,23 +430,33 @@ namespace WDE
         private void AjustPanel()
         {
             if ((panel1.Visible) && (!panel2.Visible))
+            {
                 panel1.Dock = DockStyle.Fill;
+            }
             else
             {
                 if (tsbLayout1.Checked)
+                {
                     panel1.Dock = DockStyle.Top;
+                }
                 else
+                {
                     panel1.Dock = DockStyle.Left;
+                }
             }
 
         }
 
-        private void ToogleToolStripMenuItem(ToolStripMenuItem tsmi, System.Windows.Forms.Control obj)
+        private void ToogleToolStripMenuItem(ToolStripMenuItem tsmi, Control obj)
         {
             if (tsmi.CheckState == CheckState.Checked)
+            {
                 tsmi.CheckState = CheckState.Unchecked;
+            }
             else
+            {
                 tsmi.CheckState = CheckState.Checked;
+            }
 
             obj.Visible = tsmi.CheckState == CheckState.Checked;
 
@@ -443,9 +494,13 @@ namespace WDE
         {
             uce.Parent.Text = pathname;
             if ((uce.TabControlLocked == true) && (uce.LockedPath == pathname))
+            {
                 (uce.Parent as TabPage).ImageIndex = 0;
+            }
             else if ((uce.TabControlLocked == true) && (uce.LockedPath != pathname))
+            {
                 (uce.Parent as TabPage).ImageIndex = 2;
+            }
         }
 
 
@@ -486,7 +541,9 @@ namespace WDE
             TabControl tc = (cmsTabControl.SourceControl as TabControl);
 
             if (tc == null)
+            {
                 return;
+            }
 
             tsmiLockTab.Enabled = tc.SelectedTab.Text.Contains(":");
             tsmiLockTab.Checked = ((tc.SelectedTab.ImageIndex == 0) || (tc.SelectedTab.ImageIndex == 2));
@@ -501,9 +558,13 @@ namespace WDE
             TabControl tc = (cmsTabControl.SourceControl as TabControl);
             TabPage tp = tc.SelectedTab;
             if (tsmiLockTab.Checked)
+            {
                 tp.ImageIndex = 0;
+            }
             else
+            {
                 tp.ImageIndex = -1;
+            }
 
             string sectionName = tp.Tag.ToString();
             applicationSettings.sections.GetItemByString(sectionName, "OPTIONS").settings.GetItemByString("Locked").Value =
@@ -516,7 +577,6 @@ namespace WDE
         private void jumpTo_Click(object sender, EventArgs e)
         {
             string jumptoFolder = (sender as ToolStripMenuItem).Text;
-            //MessageBox.Show(jumptoFolder);
 
             try
             {
@@ -529,133 +589,74 @@ namespace WDE
             {
                 MessageBox.Show("Navigation not possible.");
             }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
         }
 
         private void flowLayoutPanel_DragEnter(object sender, DragEventArgs e)
         {
             string[] s = (string[])e.Data.GetData(DataFormats.FileDrop, false);
-            //Console.WriteLine(s[0]);
-
             e.Effect = DragDropEffects.Link;
-
         }
 
         private void flowLayoutPanel_DragDrop(object sender, DragEventArgs e)
         {
-            //String[] Params = (String[])e.Data.GetData(DataFormats.FileDrop);
-            //string myParam = Params[0];
-            //string myDir;
-            //string myDirCaption;
-
-            //if (System.IO.File.Exists(myParam))
-            //    myDir = System.IO.Path.GetDirectoryName(myParam);
-            //else
-            //    myDir = System.IO.Path.GetFullPath(myParam);
-
-            //myDirCaption = System.IO.Path.GetFileName(myDir);
-
-            //if (myDirCaption == "")
-            //    myDirCaption = myDir;
-
-
-            //int i = applicationSettings.sections.GetItemIDByString(sectionName, "FAV");
-            //if (i >= 0)
-            //    applicationSettings.sections[i].settings.Add(myDirCaption, myDir);
-
-
-            //            if (sender.GetType().Name == "ToolStrip")
-            //{
-            //    CreateFavButton(myDirCaption, myDir, flowLayoutPanel);
-            //}
-
             String[] Params = (String[])e.Data.GetData(DataFormats.FileDrop);
             string myParam = Params[0];
             string myDir;
             string myDirCaption;
 
-            if (System.IO.File.Exists(myParam))
-                myDir = System.IO.Path.GetDirectoryName(myParam);
+            if (File.Exists(myParam))
+            {
+                myDir = Path.GetDirectoryName(myParam);
+            }
             else
-                myDir = System.IO.Path.GetFullPath(myParam);
+            {
+                myDir = Path.GetFullPath(myParam);
+            }
 
-            myDirCaption = System.IO.Path.GetFileName(myDir);
+            myDirCaption = Path.GetFileName(myDir);
 
             Properties.Settings.Default.Favs.Add(myDir);
 
-            //if (sender.GetType().Name == "ToolStrip")
             CreateFavButton(myDirCaption, myDir);
         }
 
         private void CreateFavButton(string FavText, string FavPath)
         {
-            ToolStripMenuItem item = new ToolStripMenuItem(FavPath, WDE.Properties.Resources.StartSmal, myFav_Click);
-            ToolStripMenuItem itemDel = new ToolStripMenuItem("Remove from Favorites", WDE.Properties.Resources.remove, myFavRemove_Click);
+            ToolStripMenuItem item = new ToolStripMenuItem(FavPath, Properties.Resources.StartSmal, myFav_Click);
+            ToolStripMenuItem itemDel = new ToolStripMenuItem("Remove from Favorites", Properties.Resources.remove, myFavRemove_Click);
             itemDel.ToolTipText = FavPath;
             itemDel.Tag = FavText;
             item.DropDownItems.Add(itemDel);
-            //item.DropDownItems.Add("remove", null, myFavRemove_Click);
             favoritesToolStripMenuItem.DropDownItems.Add(item);
 
-            //System.Windows.Forms.Button mybtn = new System.Windows.Forms.Button();
-            //mybtn.Parent = flp;
-            //if (FavText == "")
-            //    FavText = FavPath;
-            //mybtn.Text = FavText;
-            //mybtn.Tag = 1;
-            //toolTip.SetToolTip(mybtn, FavPath);
-            //mybtn.FlatStyle = FlatStyle.Flat;
-            //mybtn.Click += new System.EventHandler(mybtn_Click);
-            //mybtn.ContextMenuStrip = contextMenuStripRemoveFav;
-            //mybtn.AutoSize = true;
-            //mybtn.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-
             if (FavText == "")
+            {
                 FavText = FavPath;
+            }
 
             ToolStripButton mybtn = new ToolStripButton(FavText);
             mybtn.Tag = 1;
-            mybtn.Image = global::WDE.Properties.Resources.folder_star;
+            mybtn.Image = Properties.Resources.folder_star;
             mybtn.ToolTipText = FavPath;
             mybtn.MouseDown += new MouseEventHandler(toolStripButton1_MouseDown);
 
-            mybtn.Click += new System.EventHandler(mysbtn_Click);
+            mybtn.Click += new EventHandler(mysbtn_Click);
             toolStripFav.Items.Add(mybtn);
         }
 
         private void mysbtn_Click(object sender, EventArgs e)
         {
             NavigateTo((sender as ToolStripButton).ToolTipText);
-            //string pfad = (sender as ToolStripButton).ToolTipText;
-            //if (pfad != "")
-            //{
-            //    if (Directory.Exists(pfad))
-            //    {
-            //        try
-            //        {
-            //            current_uce.explorerBrowser.Navigate(ShellFileSystemFolder.FromParsingName(pfad));
-            //        }
-            //        catch (Exception) { }
-            //    }
-            //    else
-            //    {
-            //        MessageBox.Show(string.Format("Path [{0}] not exist! Maybe an old temporary drive like an usb stick or network drive.", pfad), "Path Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            //    }
-            //}
         }
 
 
         private void myFav_Click(object sender, EventArgs e)
         {
             NavigateTo((sender as ToolStripMenuItem).Text);
-            //string pfad = (sender as ToolStripMenuItem).Text;
-            //if (pfad != "")
-            //{
-            //    try
-            //    {
-            //        current_uce.explorerBrowser.Navigate(ShellFileSystemFolder.FromParsingName(pfad));
-            //    }
-            //    catch (Exception) { }
-            //}
         }
 
         private bool NavigateTo(string path)
@@ -664,9 +665,12 @@ namespace WDE
             {
                 try
                 {
-                    current_uce.explorerBrowser.Navigate(ShellFileSystemFolder.FromParsingName(path));
+                    current_uce.explorerBrowser.Navigate(ShellObject.FromParsingName(path));
                 }
-                catch (Exception) { }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex);
+                }
             }
             else
             {
@@ -680,22 +684,6 @@ namespace WDE
         private void mybtn_Click(object sender, EventArgs e)
         {
             NavigateTo(toolTip.GetToolTip(sender as Button));
-            //string pfad = toolTip.GetToolTip(sender as Button);
-            //if (pfad != "")
-            //{
-            //    if (Directory.Exists(pfad))
-            //    {
-            //        try
-            //        {
-            //            current_uce.explorerBrowser.Navigate(ShellFileSystemFolder.FromParsingName(pfad));
-            //        }
-            //        catch (Exception) { }
-            //    }
-            //    else
-            //    {
-            //        MessageBox.Show(string.Format("Path [{0}] not exist! Maybe an old temporary drive like an usb stick or network drive.", pfad), "Path Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            //    }
-            //}
         }
 
         private void RemoveFavItem(string name)
@@ -723,8 +711,6 @@ namespace WDE
             }
         }
 
-
-
         private void myFavRemove_Click(object sender, EventArgs e)
         {
             ToolStripMenuItem item = (sender as ToolStripMenuItem);
@@ -750,11 +736,6 @@ namespace WDE
 
         private void favoritesToolbarToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            //if (favoritesToolbarToolStripMenuItem.CheckState == CheckState.Checked)
-            //    favoritesToolbarToolStripMenuItem.CheckState = CheckState.Unchecked;
-            //else
-            //    favoritesToolbarToolStripMenuItem.CheckState = CheckState.Checked;
-
             toolStripFav.Visible = favoritesToolbarToolStripMenuItem.Checked;
             Properties.Settings.Default.ViewFavToolbar = favoritesToolbarToolStripMenuItem.Checked;
 
@@ -765,8 +746,6 @@ namespace WDE
                 OrderLayout();
             }
         }
-
-
 
         private void tsbShowHide1_Click(object sender, EventArgs e)
         {
@@ -792,7 +771,6 @@ namespace WDE
             {
                 panel1.Visible = true;
                 tsbShowHide1.Checked = true;
-
             }
 
             showHideExplorer1ToolStripMenuItem.Checked = tsbShowHide1.Checked;
@@ -812,11 +790,12 @@ namespace WDE
             tsbShowHide2_Click(sender, null);
         }
 
-
         private UserControlExplorer AddExplorer(TabControl DestinationTabControl, string name, bool newMode)
         {
             if (DestinationTabControl == null)
+            {
                 return null;
+            }
 
             string newSectionName = applicationSettings.GetNewSectionName();
 
@@ -825,7 +804,9 @@ namespace WDE
                 TabPage newTabPage = new TabPage();
 
                 if (!newMode)
+                {
                     DestinationTabControl.TabPages.Add(newTabPage);
+                }
                 else
                 {
                     int insertPosition = DestinationTabControl.TabCount - 1;
@@ -837,7 +818,7 @@ namespace WDE
                 uce.Parent = newTabPage;
                 uce.Dock = DockStyle.Fill;
                 uce.MyEvent += new MyDelegate(GetMyEvent);
-                uce.pathChanged += new UserControlExplorer.PathChanged(this.path_Changed);
+                uce.pathChanged += new UserControlExplorer.PathChanged(path_Changed);
                 uce.myPreviewKeyDown += new UserControlExplorer.MyPreviewKeyDown(uce_myPreviewKeyDown);
 
                 return uce;
@@ -845,7 +826,6 @@ namespace WDE
 
             return null;
         }
-
 
         private void GetMyEvent(object sender, EventArgs e)
         {
@@ -855,9 +835,10 @@ namespace WDE
 
                 MarkTabControl(current_uce.Parent.Parent.Name);
             }
-            catch (Exception) { }
-
-            //Console.WriteLine((sender as UserControlExplorer).Parent.Parent.Name);
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
         }
 
         private void MarkTabControl(string tabControlName)
@@ -865,17 +846,13 @@ namespace WDE
 
             if (tabControlName == tabControl1.Name)
             {
-                panel1.BackColor = System.Drawing.Color.DimGray;
-                panel2.BackColor = System.Drawing.Color.Transparent;
-                //panel1.BorderStyle = BorderStyle.FixedSingle;
-                //panel2.BorderStyle = BorderStyle.None;
+                panel1.BackColor = Color.DimGray;
+                panel2.BackColor = Color.Transparent;
             }
             else
             {
-                panel1.BackColor = System.Drawing.Color.Transparent;
-                panel2.BackColor = System.Drawing.Color.DimGray;
-                //panel2.BorderStyle = BorderStyle.FixedSingle;
-                //panel1.BorderStyle = BorderStyle.None;
+                panel1.BackColor = Color.Transparent;
+                panel2.BackColor = Color.DimGray;
             }
         }
 
@@ -886,10 +863,10 @@ namespace WDE
 
         private void Run(string AppName)
         {
-            System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
+            ProcessStartInfo psi = new ProcessStartInfo();
             psi.FileName = AppName;
 
-            System.Diagnostics.Process.Start(psi);
+            Process.Start(psi);
         }
 
         public static string GetUrlResponse(string url, string username, string password, bool showMsgOnError)
@@ -923,11 +900,14 @@ namespace WDE
             }
             catch (Exception e)
             {
+                Debug.WriteLine(e);
                 if (showMsgOnError)
-                    System.Windows.Forms.MessageBox.Show(e.ToString());
+                {
+                    MessageBox.Show(e.ToString());
+                }
             }
 
-            return content.ToString();
+            return content;
         }
 
         private void tabControl1_DoubleClick(object sender, EventArgs e)
@@ -941,7 +921,10 @@ namespace WDE
                 UserControlExplorer cur_uce = tabControl2.SelectedTab.Controls["UserControlExplorer"] as UserControlExplorer;
                 cur_uce.explorerBrowser.Navigate(ShellFileSystemFolder.FromFolderPath(curLocation));
             }
-            catch (Exception) { }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
         }
 
         private void tabControl2_DoubleClick(object sender, EventArgs e)
@@ -955,7 +938,10 @@ namespace WDE
                 UserControlExplorer cur_uce = tabControl1.SelectedTab.Controls["UserControlExplorer"] as UserControlExplorer;
                 cur_uce.explorerBrowser.Navigate(ShellFileSystemFolder.FromFolderPath(curLocation));
             }
-            catch (Exception) { }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
         }
 
         private void tabControl1_MouseDown(object sender, MouseEventArgs e)
@@ -976,51 +962,15 @@ namespace WDE
             SetCurrentUCE(tabControl2);
         }
 
-
         private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
         {
             SetCurrentUCE(tabControl1);
-            //if (tabControl1.SelectedTab.ImageIndex == 1)
-            //{
-            //    AddExplorer(tabControl1, "",true);
-            //    tabControl1.SelectedIndex = tabControl1.TabCount - 2;
-            //}
-            //else
-            //{
-            //    try
-            //    {
-            //        string sectionName = tabControl1.SelectedTab.Tag.ToString();
-            //        //MessageBox.Show((tabControl1.SelectedTab.Controls["UserControlExplorer"] as UserControlExplorer).Name);
-            //        current_uce1 = (tabControl1.SelectedTab.Controls["UserControlExplorer"] as UserControlExplorer);
-            //        current_uce = current_uce1;
-            //        MarkTabControl(tabControl1.Name);
-            //    }
-            //    catch (Exception) { }
-            //}
         }
 
         private void tabControl2_SelectedIndexChanged(object sender, EventArgs e)
         {
             SetCurrentUCE(tabControl2);
-
-            //if (tabControl2.SelectedTab.ImageIndex == 1)
-            //{
-            //    AddExplorer(tabControl2, "", true);
-            //    tabControl2.SelectedIndex = tabControl2.TabCount - 2;
-            //}
-            //else
-            //{
-            //    try
-            //    {
-            //        string sectionName = tabControl2.SelectedTab.Tag.ToString();
-            //        current_uce2 = (tabControl2.SelectedTab.Controls["UserControlExplorer"] as UserControlExplorer);
-            //        current_uce = current_uce2;
-            //        MarkTabControl(tabControl2.Name);
-            //    }
-            //    catch (Exception) { }
-            //}
         }
-
         private void SetCurrentUCE(TabControl tabControlx)
         {
             if (tabControlx.SelectedTab.ImageIndex == 1)
@@ -1042,35 +992,32 @@ namespace WDE
                     {
                         current_uce2 = (tabControlx.SelectedTab.Controls["UserControlExplorer"] as UserControlExplorer);
                         current_uce = current_uce2;
-
-
-                        //foreach (TabPage tp in tabControl2.TabPages)
-                        //{
-                        //    try
-                        //    {
-                        //        (tp.Controls["UserControlExplorer"] as UserControlExplorer).ShowSelected = false; ;
-                        //    }
-                        //    catch (Exception) { }
-                        //}
-
                     }
 
                     foreach (TabPage tp in tabControlx.TabPages)
                     {
                         try
                         {
-                            (tp.Controls["UserControlExplorer"] as UserControlExplorer).ShowSelected = false; ;
+                            if (tp.Controls["UserControlExplorer"] is UserControlExplorer)
+                            {
+                                (tp.Controls["UserControlExplorer"] as UserControlExplorer).ShowSelected = false;
+                            }
                         }
-                        catch (Exception) { }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine(ex);
+                        }
                     }
 
                     MarkTabControl(tabControlx.Name);
                 }
-                catch (Exception) { }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex);
+                }
             }
             current_uce.ShowSelected = true;
         }
-
 
         private void toolStripFav_DragDrop(object sender, DragEventArgs e)
         {
@@ -1079,23 +1026,25 @@ namespace WDE
             string myDir;
             string myDirCaption;
 
-            if (System.IO.File.Exists(myParam))
-                myDir = System.IO.Path.GetDirectoryName(myParam);
+            if (File.Exists(myParam))
+            {
+                myDir = Path.GetDirectoryName(myParam);
+            }
             else
-                myDir = System.IO.Path.GetFullPath(myParam);
+            {
+                myDir = Path.GetFullPath(myParam);
+            }
 
-            myDirCaption = System.IO.Path.GetFileName(myDir);
+            myDirCaption = Path.GetFileName(myDir);
 
             Properties.Settings.Default.Favs.Add(myDir);
 
-            //if (sender.GetType().Name == "ToolStrip")
             CreateFavButton(myDirCaption, myDir);
         }
 
         private void toolStripFav_DragEnter(object sender, DragEventArgs e)
         {
             string[] s = (string[])e.Data.GetData(DataFormats.FileDrop, false);
-            //Console.WriteLine(s[0]);
 
             e.Effect = DragDropEffects.Link;
         }
@@ -1103,7 +1052,9 @@ namespace WDE
         private void clearToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (contextTSB == null)
+            {
                 return;
+            }
 
             string mypath = contextTSB.ToolTipText;
 
@@ -1149,15 +1100,6 @@ namespace WDE
         {
             ResetAllTabPages(tabControl1);
             ResetAllTabPages(tabControl2);
-            //foreach (TabPage item in tabControl1.TabPages)
-            //{
-            //    if (item.Text != string.Empty)
-            //    {
-            //        UserControlExplorer my_uce = item.Controls["UserControlExplorer"] as UserControlExplorer;
-            //        my_uce.ResetToLockedPath();
-            //    }
-            //}
-
         }
 
         private void ResetAllTabPages(TabControl tc)
@@ -1174,17 +1116,7 @@ namespace WDE
 
         private void FormMain_Shown(object sender, EventArgs e)
         {
-            //string systemFolder = @"C:\Windows";
-
-            //jumpList = JumpList.CreateJumpList();
-            //jumpList.AddUserTasks(new JumpListLink(Path.Combine(systemFolder, "explorer.exe"), "Open Explorer")
-            //{
-            //    IconReference = new IconReference(Path.Combine(systemFolder, "explorer.exe"), 0)
-            //});
-
-            //jumpList.Refresh();
             formSplash.Close();
-
         }
 
         private void tabControl1_DragDrop(object sender, DragEventArgs e)
@@ -1210,10 +1142,14 @@ namespace WDE
             string myParam = Params[0];
             string myDir;
 
-            if (System.IO.File.Exists(myParam))
-                myDir = System.IO.Path.GetDirectoryName(myParam);
+            if (File.Exists(myParam))
+            {
+                myDir = Path.GetDirectoryName(myParam);
+            }
             else
-                myDir = System.IO.Path.GetFullPath(myParam);
+            {
+                myDir = Path.GetFullPath(myParam);
+            }
 
             try
             {
@@ -1223,7 +1159,10 @@ namespace WDE
                 UserControlExplorer cur_uce = tc.SelectedTab.Controls["UserControlExplorer"] as UserControlExplorer;
                 cur_uce.explorerBrowser.Navigate(ShellFileSystemFolder.FromFolderPath(myDir));
             }
-            catch (Exception) { }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
         }
 
         private void tsmiShowHiddenFiles_Click(object sender, EventArgs e)
@@ -1233,7 +1172,9 @@ namespace WDE
             {
                 int value = 0;
                 if (tsmiShowHiddenFiles.Checked == true)
+                {
                     value = 1;
+                }
 
                 regKey.SetValue("Hidden", value, RegistryValueKind.DWord);
 
@@ -1243,12 +1184,12 @@ namespace WDE
                 }
 
                 if (current_uce2.explorerBrowser.NavigationLog.CurrentLocation.Parent != null)
+                {
                     current_uce2.explorerBrowser.Navigate(current_uce2.explorerBrowser.NavigationLog.CurrentLocation.Parent);
+                }
 
                 current_uce1.explorerBrowser.NavigateLogLocation(NavigationLogDirection.Backward);
                 current_uce2.explorerBrowser.NavigateLogLocation(NavigationLogDirection.Backward);
-                
-                //RefreshAllExplorer();
             }
         }
 
@@ -1263,7 +1204,9 @@ namespace WDE
             TabControl tc = (cmsTabControl.SourceControl as TabControl);
 
             if (tc == null)
+            {
                 return;
+            }
 
             TabUp(tc);
         }
@@ -1276,7 +1219,9 @@ namespace WDE
                 int i = tc.SelectedIndex;
 
                 if (i >= tc.TabPages.Count - 2)
+                {
                     return;
+                }
 
                 TabPage tp2 = tc.TabPages[tc.SelectedIndex + 1];
 
@@ -1294,7 +1239,9 @@ namespace WDE
             TabControl tc = (cmsTabControl.SourceControl as TabControl);
 
             if (tc == null)
+            {
                 return;
+            }
 
             TabDown(tc);
         }
@@ -1307,7 +1254,9 @@ namespace WDE
                 int i = tc.SelectedIndex;
 
                 if (i == 0)
+                {
                     return;
+                }
 
                 TabPage tp2 = tc.TabPages[tc.SelectedIndex - 1];
 
@@ -1324,58 +1273,64 @@ namespace WDE
         {
             for (int j = 0; j < tc.TabPages.Count - 1; j++)
             {
-                (tc.TabPages[j].Controls["UserControlExplorer"] as UserControlExplorer).SavedTabIndex = j;
+                if (tc.TabPages[j].Controls["UserControlExplorer"] is UserControlExplorer)
+                {
+                    (tc.TabPages[j].Controls["UserControlExplorer"] as UserControlExplorer).SavedTabIndex = j;
+                }
             }
         }
 
         private void FormMain_KeyDown(object sender, KeyEventArgs e)
         {
             if ((e.Modifiers == Keys.Control) && (e.KeyCode == Keys.Add))
+            {
                 TabUp(current_uce.CurrentTabControl);
+            }
             else if ((e.Modifiers == Keys.Control) && (e.KeyCode == Keys.Subtract))
+            {
                 TabDown(current_uce.CurrentTabControl);
+            }
             else if ((e.Modifiers == Keys.Control) && (e.KeyCode == Keys.U))
             {
                 if (current_uce == current_uce1)
+                {
                     current_uce = current_uce2;
+                }
                 else
+                {
                     current_uce = current_uce1;
+                }
 
                 MarkTabControl(current_uce.Parent.Parent.Name);
                 current_uce.Focus();
             }
-
-            //MessageBox.Show(e.KeyData.ToString());
-            //if ((e.KeyCode == Keys.Alt) && (e.KeyCode == Keys.D1))
-            //if ((e.Modifiers == Keys.Control ) &&(e.KeyCode==Keys.D1))
-            //    MessageBox.Show("AAA");
-
         }
-
 
         void uce_myPreviewKeyDown(object sender, PreviewKeyDownEventArgs e, TabControl dTabControl)
         {
             if ((e.Modifiers == Keys.Control) && (e.KeyCode == Keys.Add))
+            {
                 TabUp(dTabControl);
+            }
             else if ((e.Modifiers == Keys.Control) && (e.KeyCode == Keys.Subtract))
+            {
                 TabDown(dTabControl);
+            }
         }
 
         private void tabControl1_DrawItem(object sender, DrawItemEventArgs e)
         {
             TabPage CurrentTab = tabControl1.TabPages[e.Index];
             Rectangle ItemRect = tabControl1.GetTabRect(e.Index);
-            //SolidBrush FillBrush = new SolidBrush(SystemColors.ControlDarkDark);
-            SolidBrush TextBrush = new SolidBrush(Color.White);
-            StringFormat sf = new StringFormat();
+            var TextBrush = new SolidBrush(Color.White);
+            var sf = new StringFormat();
             sf.Alignment = StringAlignment.Center;
             sf.LineAlignment = StringAlignment.Center;
 
             //If we are currently painting the Selected TabItem we'll
             //change the brush colors and inflate the rectangle.
-            if (System.Convert.ToBoolean(e.State & DrawItemState.Selected))
+            if (Convert.ToBoolean(e.State & DrawItemState.Selected))
             {
-                //FillBrush.Color = Color.White;
                 TextBrush.Color = Color.Red;
                 ItemRect.Inflate(2, 2);
             }
@@ -1385,15 +1340,15 @@ namespace WDE
             {
                 float RotateAngle = 90;
                 if (tabControl1.Alignment == TabAlignment.Left)
+                {
                     RotateAngle = 270;
+                }
+
                 PointF cp = new PointF(ItemRect.Left + (ItemRect.Width / 2), ItemRect.Top + (ItemRect.Height / 2));
                 e.Graphics.TranslateTransform(cp.X, cp.Y);
                 e.Graphics.RotateTransform(RotateAngle);
                 ItemRect = new Rectangle(-(ItemRect.Height / 2), -(ItemRect.Width / 2), ItemRect.Height, ItemRect.Width);
             }
-
-            //Next we'll paint the TabItem with our Fill Brush
-            //e.Graphics.FillRectangle(FillBrush, ItemRect);
 
             //Now draw the text.
             e.Graphics.DrawString(CurrentTab.Text, e.Font, TextBrush, (RectangleF)ItemRect, sf);
@@ -1402,44 +1357,8 @@ namespace WDE
             e.Graphics.ResetTransform();
 
             //Finally, we should Dispose of our brushes.
-            //FillBrush.Dispose();
             TextBrush.Dispose();
-            //Font TabFont;
-            //Brush BackBrush = new SolidBrush(Color.White); //Set background color
-            //Brush ForeBrush = new SolidBrush(Color.DarkGray);//Set foreground color
-            //if (e.Index == this.tabControl1.SelectedIndex)
-            //{
-            //    //TabFont = new Font(e.Font, FontStyle.Italic | FontStyle.Bold);
-            //    TabFont = new Font(e.Font, FontStyle.Underline);
-
-            //}
-            //else
-            //{
-            //    TabFont = e.Font;
-            //}
-            //string TabName = this.tabControl1.TabPages[e.Index].Text;
-            //StringFormat sf = new StringFormat();
-            //sf.Alignment = StringAlignment.Center;
-            //e.Graphics.FillRectangle(BackBrush, e.Bounds);
-            //Rectangle r = e.Bounds;
-            //r = new Rectangle(r.X, r.Y + 3, r.Width, r.Height - 3);
-            //e.Graphics.DrawString(TabName, TabFont, ForeBrush, r, sf);
-            ////Dispose objects
-            //sf.Dispose();
-            //if (e.Index == this.tabControl1.SelectedIndex)
-            //{
-            //    TabFont.Dispose();
-            //    BackBrush.Dispose();
-            //    ForeBrush.Dispose();
-
-            //}
-            //else
-            //{
-            //    BackBrush.Dispose();
-            //    ForeBrush.Dispose();
-            //}
         }
-
 
         private void sortPages(TabControl tc)
         {
@@ -1462,7 +1381,6 @@ namespace WDE
                 }
             }
 
-
             for (int i = 0; i < tc.TabPages.Count; i++)
             {
                 TabPage tp = tc.TabPages[i];
@@ -1471,7 +1389,6 @@ namespace WDE
                     tc.SelectedIndex = i;
                     break;
                 }
-
             }
         }
 
@@ -1484,7 +1401,5 @@ namespace WDE
         {
             TabDown(current_uce.CurrentTabControl);
         }
-
-
     }
 }

@@ -93,3 +93,5 @@ Backup*/
 UpgradeLog*.XML
 testdata/
 windows/My Amplifier XE Results - */
+.vs/
+.git/

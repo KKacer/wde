@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Xml.Serialization;
+using System.Diagnostics;
 using System.IO;
 using System.Xml;
-using System.Windows.Forms;
 
 namespace jd.Helper.Configuration
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public class Setting
     {
@@ -19,13 +16,13 @@ namespace jd.Helper.Configuration
 
         public Setting(string name, string value)
         {
-            this.Name = name;
-            this.Value=value;
+            Name = name;
+            Value=value;
         }
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public class Settings:List<Setting>
     {
@@ -39,26 +36,30 @@ namespace jd.Helper.Configuration
         public Setting Add(string name, string value)
         {
             Setting setting = new Setting(name,value);
-            this.Add(setting);
+            Add(setting);
             return setting;
         }
 
         public Setting GetItemByString(string searchString)
         {
-            for (int i = 0; i < this.Count; i++)
+            for (int i = 0; i < Count; i++)
             {
                 if (this[i].Name == searchString)
+                {
                     return this[i];
+                }
             }
             return null;
         }
 
         public int GetItemIDByString(string searchString)
         {
-            for (int i = 0; i < this.Count; i++)
+            for (int i = 0; i < Count; i++)
             {
                 if (this[i].Name == searchString)
+                {
                     return i;
+                }
             }
             return -1;
         }
@@ -66,7 +67,7 @@ namespace jd.Helper.Configuration
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public class Section
     {
@@ -79,16 +80,16 @@ namespace jd.Helper.Configuration
 
         public Section(string SectionName, string SectionClassName)
         {
-            this.Name = SectionName;
-            this.ClassName = SectionClassName;
-            this.settings = new Settings();
+            Name = SectionName;
+            ClassName = SectionClassName;
+            settings = new Settings();
         }
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
-    [Serializable()]  
+    [Serializable()]
     public class Sections:List<Section>
     {
         static int instanceCount = 0;
@@ -107,7 +108,7 @@ namespace jd.Helper.Configuration
         {
             instanceCount++;
             Section newSection = new Section(sectionName, SectionClassName);
-            this.Add(newSection);
+            Add(newSection);
             //this.SectionList.ad
             //Section section = new Section(sectionName);
             return newSection;
@@ -115,20 +116,24 @@ namespace jd.Helper.Configuration
 
         public Section GetItemByString(string searchString, string searchClassName)
         {
-            for (int i = 0; i < this.Count; i++)
+            for (int i = 0; i < Count; i++)
             {
                 if ((this[i].Name == searchString) && (this[i].ClassName == searchClassName))
+                {
                     return this[i];
+                }
             }
             return null;
         }
 
         public int GetItemIDByString(string searchString, string searchClassName)
         {
-            for (int i = 0; i < this.Count; i++)
+            for (int i = 0; i < Count; i++)
             {
                 if ((this[i].Name == searchString) && (this[i].ClassName == searchClassName))
+                {
                     return i;
+                }
             }
             return -1;
         }
@@ -154,7 +159,7 @@ namespace jd.Helper.Configuration
         public ApplicationSettings(string fileName)
         {
             this.fileName = fileName;
-            this.sections = new Sections();
+            sections = new Sections();
 
             //Load();
         }
@@ -165,9 +170,11 @@ namespace jd.Helper.Configuration
 
             do
             {
-                string tempName = "UserExplorerControl" + i.ToString();
+                string tempName = "UserExplorerControl" + i;
                 if (sections.GetItemByString(tempName,"OPTIONS") == null)
+                {
                     return tempName;
+                }
 
                 ++i;
 
@@ -186,10 +193,10 @@ namespace jd.Helper.Configuration
             XmlNode root = xmlDoc.DocumentElement;
 
             // Alle Sektionen durchgehen und die Einstellungen schreiben
-            for (int i = 0; i < this.sections.Count; i++)
-			{
-                Section section = this.sections[i];
-			 
+            for (int i = 0; i < sections.Count; i++)
+            {
+                Section section = sections[i];
+
                 // Element für die Sektion erzeugen und anfügen
                 XmlElement sectionElement = xmlDoc.CreateElement("section");
 
@@ -223,25 +230,31 @@ namespace jd.Helper.Configuration
             // Datei speichern
             try
             {
-                xmlDoc.Save(this.fileName);
+                xmlDoc.Save(fileName);
             }
             catch (IOException ex)
             {
                 throw new IOException("Fehler beim Speichern der " +
-                   "Konfigurationsdatei '" + this.fileName + "': " + ex.Message);
+                   "Konfigurationsdatei '" + fileName + "': " + ex.Message);
             }
             catch (XmlException ex)
             {
                 throw new XmlException("Fehler beim Speichern der " +
-                   " Konfigurationsdatei '" + this.fileName + "': " +
+                   " Konfigurationsdatei '" + fileName + "': " +
                    ex.Message, ex);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
             }
         }
 
         public bool Load()
         {
-            if (!System.IO.File.Exists(fileName))
+            if (!File.Exists(fileName))
+            {
                 return false;
+            }
 
             sections.Clear();
 
@@ -252,9 +265,9 @@ namespace jd.Helper.Configuration
             {
                 xmlReader = XmlReader.Create(fileName);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                
+                Debug.WriteLine(ex);
                 throw;
             }
 
@@ -270,12 +283,17 @@ namespace jd.Helper.Configuration
                         if (xmlReader.AttributeCount > 0)
                         {
                             if (xmlReader.GetAttribute("class") == "FAV")
-                                currentSection = this.sections.Add(xmlReader.GetAttribute(0), "FAV");
+                            {
+                                currentSection = sections.Add(xmlReader.GetAttribute(0), "FAV");
+                            }
                             else if (xmlReader.GetAttribute("class") == "OPTIONS")
-                                currentSection = this.sections.Add(xmlReader.GetAttribute(0), "OPTIONS");
+                            {
+                                currentSection = sections.Add(xmlReader.GetAttribute(0), "OPTIONS");
+                            }
                             else
-                                currentSection = this.sections.Add(xmlReader.GetAttribute(0), "");
-                            //Console.WriteLine(xmlReader.GetAttribute(0));
+                            {
+                                currentSection = sections.Add(xmlReader.GetAttribute(0), "");
+                            }
                         }
                     }
                     else if (xmlReader.Name == "setting")
